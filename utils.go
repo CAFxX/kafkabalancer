@@ -49,9 +49,7 @@ func getBrokerList(pl *PartitionList) []BrokerID {
 	return brokers
 }
 
-func getBrokerListByLoad(pl *PartitionList, brokers []BrokerID) []BrokerID {
-	loads := getBrokerLoad(pl)
-
+func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []BrokerID {
 	b := make([]BrokerLoad, 0, len(brokers))
 	for _, id := range brokers {
 		b = append(b, BrokerLoad{ID: id, Load: loads[id]})

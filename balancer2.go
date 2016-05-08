@@ -39,6 +39,11 @@ func replacepl(p Partition, orig BrokerID, repl BrokerID) *PartitionList {
 	panic(fmt.Sprintf("partition %v replicas don't contain %d", p, orig))
 }
 
+func addpl(p Partition, b BrokerID) *PartitionList {
+	p.Replicas = append(p.Replicas, b)
+	return singlepl(p)
+}
+
 // Balance analyzes the workload distribution among brokers for the
 // partitions listed in the argument. It returns a PartitionList with 0 or more
 // partition reassignments.
@@ -57,6 +62,7 @@ func Balance(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
 		}
 	}
 
+	log.Print("no candidate changes")
 	return emptypl(), nil
 }
 
@@ -113,12 +119,14 @@ func FillDefaults(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error
 // RemoveExtraReplicas removes replicas from partitions having lower NumReplicas
 // than the current number of replicas
 func RemoveExtraReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+	loads := getBrokerLoad(pl)
+
 	for _, p := range pl.Partitions {
 		if p.NumReplicas >= len(p.Replicas) {
 			continue
 		}
 
-		brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
+		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
 		replicaset := toBrokerSet(p.Replicas)
 		for _, b := range brokersByLoad {
 			if _, found := replicaset[b]; found {
@@ -135,19 +143,19 @@ func RemoveExtraReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList
 // AddMissingReplicas adds replicas to partitions having NumReplicas greater
 // than the current number of replicas
 func AddMissingReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+	loads := getBrokerLoad(pl)
 	// add missing replicas
 	for _, p := range pl.Partitions {
 		if p.NumReplicas <= len(p.Replicas) {
 			continue
 		}
 
-		brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
+		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
 		replicaset := toBrokerSet(p.Replicas)
 		for idx := len(brokersByLoad) - 1; idx >= 0; idx++ {
 			b := brokersByLoad[idx]
 			if _, found := replicaset[b]; !found {
-				p.Replicas = append(p.Replicas, b)
-				return singlepl(p), nil
+				return addpl(p, b), nil
 			}
 		}
 
@@ -160,8 +168,10 @@ func AddMissingReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList,
 // MoveDisallowedReplicas moves replicas from non-allowed brokers to the least
 // loaded ones
 func MoveDisallowedReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+	loads := getBrokerLoad(pl)
+
 	for _, p := range pl.Partitions {
-		brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
+		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
 		brokersset := toBrokerSet(brokersByLoad)
 
 		for _, id := range p.Replicas {
@@ -196,6 +206,10 @@ func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList,
 	cu := su
 
 	for _, p := range pl.Partitions {
+		if p.NumReplicas < cfg.MinReplicasForRebalancing {
+			continue
+		}
+
 		replicaset := toBrokerSet(p.Replicas)
 		replicas := p.Replicas[1:]
 		if leaders {
@@ -220,7 +234,7 @@ func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList,
 		}
 	}
 
-	if cu < su {
+	if cu < su-cfg.MinUnbalance {
 		return replacepl(cp, cr, cb), nil
 	}
 
@@ -236,5 +250,9 @@ func MoveNonLeaders(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, err
 // MoveLeaders moves leader replicas from overloaded brokers to underloaded
 // brokers
 func MoveLeaders(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+	if !cfg.AllowLeaderRebalancing {
+		return nil, nil
+	}
+
 	return move(pl, cfg, true)
 }
