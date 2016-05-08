@@ -69,7 +69,7 @@ func main() {
 	}
 
 	for {
-		ppl, err := AnalyzeDistribution(pl, RebalanceConfig{
+		ppl, err := Balance(pl, RebalanceConfig{
 			AllowLeaderRebalancing:    *allowLeader,
 			MinReplicasForRebalancing: *minReplicas,
 			MinUnbalance:              *minUnbalance,
