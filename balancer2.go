@@ -108,46 +108,53 @@ func FillDefaults(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error
 	return nil, nil
 }
 
+// RemoveExtraReplicas removes replicas from partitions having lower NumReplicas
+// than the current number of replicas
 func RemoveExtraReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
 	// remove unneeded replicas on existing brokers
 	for _, p := range pl.Partitions {
-		if p.NumReplicas < len(p.Replicas) {
-			brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
-			replicaset := toBrokerSet(p.Replicas)
-			for _, b := range brokersByLoad {
-				if _, found := replicaset[b]; found {
-					return replacepl(p, b, -1), nil
-				}
-			}
-			return nil, fmt.Errorf("partition %v unable to pick replica to remove", p)
+		if p.NumReplicas >= len(p.Replicas) {
+			continue
 		}
+		brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
+		replicaset := toBrokerSet(p.Replicas)
+		for _, b := range brokersByLoad {
+			if _, found := replicaset[b]; found {
+				return replacepl(p, b, -1), nil
+			}
+		}
+		return nil, fmt.Errorf("partition %v unable to pick replica to remove", p)
 	}
 
 	return nil, nil
 }
 
+// AddMissingReplicas adds replicas to partitions having NumReplicas greater
+// than the current number of replicas
 func AddMissingReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
 	// add missing replicas
 	for _, p := range pl.Partitions {
-		if p.NumReplicas > len(p.Replicas) {
-			brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
-			replicaset := toBrokerSet(p.Replicas)
-			for idx := len(brokersByLoad) - 1; idx >= 0; idx++ {
-				b := brokersByLoad[idx]
-				if _, found := replicaset[b]; !found {
-					p.Replicas = append(p.Replicas, b)
-					return singlepl(p), nil
-				}
-			}
-			return nil, fmt.Errorf("partition %v unable to pick replica to add", p)
+		if p.NumReplicas <= len(p.Replicas) {
+			continue
 		}
+		brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
+		replicaset := toBrokerSet(p.Replicas)
+		for idx := len(brokersByLoad) - 1; idx >= 0; idx++ {
+			b := brokersByLoad[idx]
+			if _, found := replicaset[b]; !found {
+				p.Replicas = append(p.Replicas, b)
+				return singlepl(p), nil
+			}
+		}
+		return nil, fmt.Errorf("partition %v unable to pick replica to add", p)
 	}
 
 	return nil, nil
 }
 
+// MoveDisallowedReplicas moves replicas from non-allowed brokers to the least
+// loaded ones
 func MoveDisallowedReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
-	// move replicas on non-existing brokers to allowed ones
 	for _, p := range pl.Partitions {
 		brokersByLoad := getBrokerListByLoad(pl, p.Brokers)
 		brokersset := toBrokerSet(brokersByLoad)
@@ -175,10 +182,50 @@ func MoveDisallowedReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionL
 	return nil, nil
 }
 
-func MoveNonLeaders(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList, error) {
+	var cp Partition
+	var cr, cb BrokerID
+
+	loads := getBrokerLoad(pl)
+	su := getUnbalance(loads)
+	cu := su
+
+	for _, p := range pl.Partitions {
+		replicaset := toBrokerSet(p.Replicas)
+		replicas := p.Replicas[1:]
+		if leaders {
+			replicas = p.Replicas[0:1]
+		}
+
+		for _, r := range replicas {
+			loads[r] -= p.Weight
+			for _, b := range p.Brokers {
+				if _, alreadyInReplicas := replicaset[b]; alreadyInReplicas {
+					continue
+				}
+
+				loads[b] += p.Weight
+				u := getUnbalance(loads)
+				if u < cu {
+					cu, cp, cr, cb = u, p, r, b
+				}
+				loads[b] -= p.Weight
+			}
+			loads[r] += p.Weight
+		}
+	}
+
+	if cu < su {
+		return replacepl(cp, cr, cb), nil
+	}
+
 	return nil, nil
 }
 
+func MoveNonLeaders(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+	return move(pl, cfg, false)
+}
+
 func MoveLeaders(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
-	return nil, nil
+	return move(pl, cfg, true)
 }

@@ -76,3 +76,29 @@ func getBrokerLoad(pl *PartitionList) map[BrokerID]float64 {
 
 	return b
 }
+
+func getUnbalance(loads map[BrokerID]float64) float64 {
+	var sumBrokerLoad float64
+	var maxBrokerLoad float64
+
+	for _, load := range loads {
+		sumBrokerLoad += load
+		if maxBrokerLoad < load {
+			maxBrokerLoad = load
+		}
+	}
+
+	avgBrokerLoad := sumBrokerLoad / float64(len(loads))
+
+	var brokerUnbalance float64
+	for _, load := range loads {
+		relBrokerLoad := load/avgBrokerLoad - 1.0
+		if relBrokerLoad > 0 {
+			brokerUnbalance += relBrokerLoad * relBrokerLoad
+		} else {
+			brokerUnbalance += relBrokerLoad * relBrokerLoad / 2
+		}
+	}
+
+	return brokerUnbalance
+}
