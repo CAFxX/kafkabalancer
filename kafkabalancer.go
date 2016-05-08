@@ -19,8 +19,10 @@ type Partition struct {
 	Topic     TopicName   `json:"topic"`
 	Partition PartitionID `json:"partition"`
 	Replicas  []BrokerID  `json:"replicas"`
-
-	Weight float64 `json:"weight,omitempty"`
+	// extensions
+	Weight      float64    `json:"weight,omitempty"`       // default: 1.0
+	NumReplicas int        `json:"num_replicas,omitempty"` // default: len(replicas)
+	Brokers     []BrokerID `json:"brokers,omitempty"`      // default: (auto)
 }
 
 var jsonInput = flag.Bool("input-json", false, "Parse the input as JSON")
@@ -29,6 +31,8 @@ var input = flag.String("input", "", "File to read")
 var allowLeader = flag.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
 var minReplicas = flag.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
 var minUnbalance = flag.Float64("min-umbalance", DefaultRebalanceConfig().MinUnbalance, "Minimum umbalance value required to perform rebalancing")
+
+var brokerIDs = flag.String("broker-ids", "auto", "Comma-separated list of broker IDs")
 
 func apply(orig *PartitionList, change *PartitionList) {
 PartitionLoop:

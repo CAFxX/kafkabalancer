@@ -10,6 +10,8 @@ type RebalanceConfig struct {
 	AllowLeaderRebalancing    bool
 	MinReplicasForRebalancing int
 	MinUnbalance              float64
+
+	Brokers []BrokerID
 }
 
 func DefaultRebalanceConfig() RebalanceConfig {
@@ -103,7 +105,7 @@ func AnalyzeDistribution(pl *PartitionList, cfg RebalanceConfig) (*PartitionList
 	// find the best replica to move
 	// goal 1 - minimize unbalance between brokers
 	// goal 2 - minimize client disruption (prefer topics with more replicas)
-	// goal 3 - minimize cluster disruption (prefer smaller/simpler operations)
+	// goal 3 - minimize cluster disruption (prefer fewer operations)
 	// current strategy: pick the replica from a "overloaded" broker and move it
 	// somewhere else to minimize the unbalance metric
 	// TODO: handle multi-way moves (i.e. consider also swapping two replicas
