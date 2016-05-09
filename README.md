@@ -66,3 +66,6 @@ Three partitions with the following set of replicas: [1 2], [1 3], [3].
 
 ## Author
 Carlo Alberto Ferraris
+
+## License
+MIT
