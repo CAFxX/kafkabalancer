@@ -8,25 +8,26 @@ func (a byBrokerID) Len() int           { return len(a) }
 func (a byBrokerID) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byBrokerID) Less(i, j int) bool { return a[i] < a[j] }
 
-type byBrokerLoad []BrokerLoad
+type brokerLoad struct {
+	ID   BrokerID
+	Load float64
+}
 
-func (a byBrokerLoad) Len() int           { return len(a) }
-func (a byBrokerLoad) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byBrokerLoad) Less(i, j int) bool { return a[i].Load < a[j].Load }
+type byBrokerLoad []brokerLoad
+
+func (a byBrokerLoad) Len() int      { return len(a) }
+func (a byBrokerLoad) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byBrokerLoad) Less(i, j int) bool {
+	if a[i].Load != a[j].Load {
+		return a[i].Load < a[j].Load
+	}
+	return a[i].ID < a[j].ID
+}
 
 func toBrokerSet(brokers []BrokerID) map[BrokerID]struct{} {
 	b := make(map[BrokerID]struct{})
 	for _, id := range brokers {
 		b[id] = struct{}{}
-	}
-
-	return b
-}
-
-func toBrokerList(brokers map[BrokerID]struct{}) []BrokerID {
-	b := make([]BrokerID, 0, len(brokers))
-	for id := range brokers {
-		b = append(b, id)
 	}
 
 	return b
@@ -50,9 +51,9 @@ func getBrokerList(pl *PartitionList) []BrokerID {
 }
 
 func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []BrokerID {
-	b := make([]BrokerLoad, 0, len(brokers))
+	b := make([]brokerLoad, 0, len(brokers))
 	for _, id := range brokers {
-		b = append(b, BrokerLoad{ID: id, Load: loads[id]})
+		b = append(b, brokerLoad{ID: id, Load: loads[id]})
 	}
 	sort.Sort(byBrokerLoad(b))
 

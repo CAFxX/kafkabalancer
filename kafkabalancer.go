@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type BrokerID int
@@ -34,21 +36,22 @@ var minUnbalance = flag.Float64("min-umbalance", DefaultRebalanceConfig().MinUnb
 
 var brokerIDs = flag.String("broker-ids", "auto", "Comma-separated list of broker IDs")
 
-func apply(orig *PartitionList, change *PartitionList) {
-PartitionLoop:
-	for idx, p := range orig.Partitions {
-		for _, q := range change.Partitions {
-			if p.Topic == q.Topic && p.Partition == q.Partition {
-				orig.Partitions[idx].Replicas = q.Replicas
-				continue PartitionLoop
-			}
-		}
-	}
-}
-
 func main() {
 	flag.Parse()
 	var err error
+
+	var brokers []BrokerID
+	if *brokerIDs != "auto" {
+		for _, broker := range strings.Split(*brokerIDs, ",") {
+			b, cerr := strconv.Atoi(broker)
+			if cerr != nil {
+				log.Printf("failed parsing broker list \"%s\": %s", *brokerIDs, err)
+				flag.Usage()
+				os.Exit(3)
+			}
+			brokers = append(brokers, BrokerID(b))
+		}
+	}
 
 	in := os.Stdin
 	if *input != "" {
@@ -73,6 +76,7 @@ func main() {
 			AllowLeaderRebalancing:    *allowLeader,
 			MinReplicasForRebalancing: *minReplicas,
 			MinUnbalance:              *minUnbalance,
+			Brokers:                   brokers,
 		})
 		if err != nil {
 			log.Printf("failed optimizing distribution: %s", err)

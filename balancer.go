@@ -19,12 +19,13 @@ func DefaultRebalanceConfig() RebalanceConfig {
 	return RebalanceConfig{
 		AllowLeaderRebalancing:    false,
 		MinReplicasForRebalancing: 2,
-		MinUnbalance:              0.0005,
+		MinUnbalance:              0.00001,
 	}
 }
 
 var steps = []func(*PartitionList, RebalanceConfig) (*PartitionList, error){
 	ValidateWeights,
+	ValidateReplicas,
 	FillDefaults,
 	RemoveExtraReplicas,
 	AddMissingReplicas,
@@ -102,6 +103,19 @@ func ValidateWeights(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, er
 	return nil, nil
 }
 
+// ValidateReplicas checks that partitions don't have more than one replica per
+// broker
+func ValidateReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+	for _, p := range pl.Partitions {
+		replicaset := toBrokerSet(p.Replicas)
+		if len(replicaset) != len(p.Replicas) {
+			return nil, fmt.Errorf("partition %v has duplicated replicas", p)
+		}
+	}
+
+	return nil, nil
+}
+
 // FillDefaults fills in default values for Weight, Brokers and NumReplicas
 func FillDefaults(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
 	// if the weights are 0, set them to 1
@@ -168,7 +182,7 @@ func AddMissingReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList,
 
 		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
 		replicaset := toBrokerSet(p.Replicas)
-		for idx := len(brokersByLoad) - 1; idx >= 0; idx++ {
+		for idx := len(brokersByLoad) - 1; idx >= 0; idx-- {
 			b := brokersByLoad[idx]
 			if _, found := replicaset[b]; !found {
 				return addpl(p, b), nil
@@ -197,7 +211,7 @@ func MoveDisallowedReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionL
 
 			replicaset := toBrokerSet(p.Replicas)
 
-			for idx := len(brokersByLoad) - 1; idx >= 0; idx++ {
+			for idx := len(brokersByLoad) - 1; idx >= 0; idx-- {
 				b := brokersByLoad[idx]
 				if _, alreadyInReplicas := replicaset[b]; alreadyInReplicas {
 					continue
@@ -233,20 +247,25 @@ func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList,
 		}
 
 		for _, r := range replicas {
+			rload := loads[r]
 			loads[r] -= p.Weight
+
 			for _, b := range p.Brokers {
 				if _, alreadyInReplicas := replicaset[b]; alreadyInReplicas {
 					continue
 				}
 
+				bload := loads[b]
 				loads[b] += p.Weight
 				u := getUnbalance(loads)
 				if u < cu {
 					cu, cp, cr, cb = u, p, r, b
 				}
-				loads[b] -= p.Weight
+
+				loads[b] = bload
 			}
-			loads[r] += p.Weight
+
+			loads[r] = rload
 		}
 	}
 

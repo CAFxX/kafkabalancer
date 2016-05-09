@@ -20,8 +20,8 @@ func wrap(p []Partition) *PartitionList {
 }
 
 func TestBalancing(t *testing.T) {
-	cfgNoLeader := DefaultRebalanceConfig()
-	cfgNoLeader.AllowLeaderRebalancing = false
+	cfgLeader := DefaultRebalanceConfig()
+	cfgLeader.AllowLeaderRebalancing = true
 
 	cfg3Replicas := DefaultRebalanceConfig()
 	cfg3Replicas.MinReplicasForRebalancing = 3
@@ -30,12 +30,13 @@ func TestBalancing(t *testing.T) {
 		testCase{
 			pl: []Partition{
 				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
-				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{1, 2, 4}, Weight: 1.0},
-				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{4, 2, 3}},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{5, 2, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
+			cfg: &cfgLeader,
 		},
 
 		testCase{
@@ -45,9 +46,8 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
-			cfg: &cfgNoLeader,
 		},
 		testCase{
 			pl: []Partition{
@@ -56,9 +56,8 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 5, 3}},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 5, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
-			cfg: &cfgNoLeader,
 		},
 		testCase{
 			pl: []Partition{
@@ -66,7 +65,6 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0},
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
-			cfg: &cfgNoLeader,
 		},
 
 		testCase{
@@ -76,7 +74,7 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{1, 3, 4}},
+				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{1, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4}},
 			},
 			cfg: &cfg3Replicas,
 		},
@@ -90,7 +88,7 @@ func TestBalancing(t *testing.T) {
 			cfg = *c.cfg
 		}
 
-		ppl, err := AnalyzeDistribution(pl, cfg)
+		ppl, err := Balance(pl, cfg)
 
 		if !reflect.DeepEqual(wrap(c.ppl), ppl) {
 			t.Errorf("expected %v, got %v", wrap(c.ppl), ppl)
