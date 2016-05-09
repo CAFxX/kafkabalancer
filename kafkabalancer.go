@@ -84,6 +84,7 @@ func main() {
 		}
 
 		if len(ppl.Partitions) == 0 {
+			log.Printf("%+v", pl)
 			os.Exit(0)
 		}
 

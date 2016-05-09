@@ -26,6 +26,9 @@ func TestBalancing(t *testing.T) {
 	cfg3Replicas := DefaultRebalanceConfig()
 	cfg3Replicas.MinReplicasForRebalancing = 3
 
+	cfg6Brokers := DefaultRebalanceConfig()
+	cfg6Brokers.Brokers = []BrokerID{1, 2, 3, 4, 5, 6}
+
 	tc := []testCase{
 		testCase{
 			pl: []Partition{
@@ -34,7 +37,7 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{5, 2, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{4, 2, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
 			cfg: &cfgLeader,
 		},
@@ -46,17 +49,17 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
 		},
 		testCase{
 			pl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
-				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 4}, Weight: 1.0},
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 5, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
 		},
 		testCase{
@@ -71,12 +74,23 @@ func TestBalancing(t *testing.T) {
 			pl: []Partition{
 				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}, Weight: 1.0},
 				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3}, Weight: 1.0},
-				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0},
+				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{4, 3, 2}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{1, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4}},
+				Partition{Topic: "b", Partition: 1, Replicas: []BrokerID{4, 3, 1}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4}},
 			},
 			cfg: &cfg3Replicas,
+		},
+
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 6}},
+			},
+			cfg: &cfg6Brokers,
 		},
 	}
 

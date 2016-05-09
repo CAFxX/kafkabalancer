@@ -27,9 +27,9 @@ var steps = []func(*PartitionList, RebalanceConfig) (*PartitionList, error){
 	ValidateWeights,
 	ValidateReplicas,
 	FillDefaults,
-	RemoveExtraReplicas,
-	AddMissingReplicas,
-	MoveDisallowedReplicas,
+	//RemoveExtraReplicas,
+	//AddMissingReplicas,
+	//MoveDisallowedReplicas,
 	MoveNonLeaders,
 	MoveLeaders,
 }
