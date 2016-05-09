@@ -1,0 +1,10 @@
+{"version":1,
+ "partitions":[{"topic":"foo1","partition":2,"replicas":[1,2]},
+               {"topic":"foo1","partition":0,"replicas":[1,2]},
+               {"topic":"foo2","partition":2,"replicas":[1,2]},
+               {"topic":"foo2","partition":0,"replicas":[1,3]},
+               {"topic":"foo1","partition":1,"replicas":[1,3]},
+               {"topic":"foo1","partition":3,"replicas":[1,3]},
+               {"topic":"foo1","partition":4,"replicas":[1,3]},
+               {"topic":"foo2","partition":1,"replicas":[4,1]}]
+}
