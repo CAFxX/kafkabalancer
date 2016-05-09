@@ -232,6 +232,12 @@ func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList,
 	var cr, cb BrokerID
 
 	loads := getBrokerLoad(pl)
+	for _, id := range cfg.Brokers {
+		if _, found := loads[id]; !found {
+			loads[id] = 0
+		}
+	}
+
 	su := getUnbalance(loads)
 	cu := su
 

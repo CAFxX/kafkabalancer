@@ -92,6 +92,23 @@ func TestBalancing(t *testing.T) {
 			},
 			cfg: &cfg6Brokers,
 		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 5}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 6}},
+			},
+			cfg: &cfg6Brokers,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
+			},
+			cfg: &cfg6Brokers,
+		},
 	}
 
 	for _, c := range tc {
@@ -106,6 +123,7 @@ func TestBalancing(t *testing.T) {
 
 		if !reflect.DeepEqual(wrap(c.ppl), ppl) {
 			t.Errorf("expected %v, got %v", wrap(c.ppl), ppl)
+			t.Logf("pl %v", c.pl)
 		}
 		if c.err != nil && err == nil || c.err == nil && err != nil {
 			t.Errorf("expected error %v, got %v", c.err, err)
