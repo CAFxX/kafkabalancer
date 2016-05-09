@@ -7,6 +7,22 @@ import (
 	"runtime"
 )
 
+type RebalanceConfig struct {
+	AllowLeaderRebalancing    bool
+	MinReplicasForRebalancing int
+	MinUnbalance              float64
+
+	Brokers []BrokerID
+}
+
+func DefaultRebalanceConfig() RebalanceConfig {
+	return RebalanceConfig{
+		AllowLeaderRebalancing:    false,
+		MinReplicasForRebalancing: 2,
+		MinUnbalance:              0.0005,
+	}
+}
+
 var steps = []func(*PartitionList, RebalanceConfig) (*PartitionList, error){
 	ValidateWeights,
 	FillDefaults,
