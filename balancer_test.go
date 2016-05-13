@@ -49,17 +49,17 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
 		},
 		testCase{
 			pl: []Partition{
-				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0},
-				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 4}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0},
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
 			},
 			ppl: []Partition{
-				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
 		},
 		testCase{
@@ -67,6 +67,9 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 4, 3}, Weight: 1.0},
 				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 3, 4}, Weight: 1.0},
 				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 2, 5}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 3, 5}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5}},
 			},
 		},
 

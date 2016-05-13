@@ -68,8 +68,12 @@ func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []Broke
 func getBrokerLoad(pl *PartitionList) map[BrokerID]float64 {
 	b := make(map[BrokerID]float64)
 	for _, p := range pl.Partitions {
-		for _, r := range p.Replicas {
-			b[r] += p.Weight
+		for idx, r := range p.Replicas {
+			if idx == 0 {
+				b[r] += p.Weight * float64(len(p.Replicas)+p.NumConsumers)
+			} else {
+				b[r] += p.Weight
+			}
 		}
 	}
 

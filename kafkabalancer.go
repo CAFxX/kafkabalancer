@@ -22,9 +22,10 @@ type Partition struct {
 	Partition PartitionID `json:"partition"`
 	Replicas  []BrokerID  `json:"replicas"`
 	// extensions
-	Weight      float64    `json:"weight,omitempty"`       // default: 1.0
-	NumReplicas int        `json:"num_replicas,omitempty"` // default: len(replicas)
-	Brokers     []BrokerID `json:"brokers,omitempty"`      // default: (auto)
+	Weight       float64    `json:"weight,omitempty"`        // default: 1.0
+	NumReplicas  int        `json:"num_replicas,omitempty"`  // default: len(replicas)
+	Brokers      []BrokerID `json:"brokers,omitempty"`       // default: (auto)
+	NumConsumers int        `json:"num_consumers,omitempty"` // default: 1
 }
 
 var jsonInput = flag.Bool("input-json", false, "Parse the input as JSON")

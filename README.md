@@ -13,7 +13,10 @@ minimally-unbalanced kafka cluster, given a set of constraints:
 
 The goal is to minimize the workload difference between brokers in the cluster,
 where the workload of a broker is measured by the sum of the weights of each
-partition having a replica on that broker.
+partition having a replica on that broker. Additionally leaders have to do more
+work (producers and consumers only operate on the leader, followers fetch from
+the leaders as well) so the weight applied to leader partitions is assumed to be
+proportional to the sum of the number of replicas and consumer groups.
 
 The tool is designed to be used iteratively: at each iteration only a single
 reassignment operation is returned by kafkabalancer. This is useful in a
