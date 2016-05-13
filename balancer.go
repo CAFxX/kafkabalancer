@@ -84,8 +84,8 @@ func Balance(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
 }
 
 // ValidateWeights make sure that either all partitions have an explicit,
-// non-negative weight or that all partitions have no weight
-func ValidateWeights(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+// strictly positive weight or that all partitions have no weight
+func ValidateWeights(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
 	hasWeights := pl.Partitions[0].Weight != 0
 
 	for _, p := range pl.Partitions {
@@ -105,7 +105,7 @@ func ValidateWeights(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, er
 
 // ValidateReplicas checks that partitions don't have more than one replica per
 // broker
-func ValidateReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+func ValidateReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
 	for _, p := range pl.Partitions {
 		replicaset := toBrokerSet(p.Replicas)
 		if len(replicaset) != len(p.Replicas) {
@@ -148,7 +148,7 @@ func FillDefaults(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error
 
 // RemoveExtraReplicas removes replicas from partitions having lower NumReplicas
 // than the current number of replicas
-func RemoveExtraReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+func RemoveExtraReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
 	loads := getBrokerLoad(pl)
 
 	for _, p := range pl.Partitions {
@@ -172,7 +172,7 @@ func RemoveExtraReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList
 
 // AddMissingReplicas adds replicas to partitions having NumReplicas greater
 // than the current number of replicas
-func AddMissingReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+func AddMissingReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
 	loads := getBrokerLoad(pl)
 	// add missing replicas
 	for _, p := range pl.Partitions {
@@ -197,7 +197,7 @@ func AddMissingReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList,
 
 // MoveDisallowedReplicas moves replicas from non-allowed brokers to the least
 // loaded ones
-func MoveDisallowedReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
+func MoveDisallowedReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
 	loads := getBrokerLoad(pl)
 
 	for _, p := range pl.Partitions {
