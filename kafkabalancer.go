@@ -31,6 +31,7 @@ type Partition struct {
 var jsonInput = flag.Bool("input-json", false, "Parse the input as JSON")
 var input = flag.String("input", "", "Name of the file to read (if no file is specified, read from stdin)")
 var maxReassign = flag.Int("max-reassign", 1, "Maximum number of reassignments to generate")
+var fullOutput = flag.Bool("full-output", false, "Output the full")
 
 var allowLeader = flag.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
 var minReplicas = flag.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
@@ -55,7 +56,7 @@ func main() {
 		}
 	}
 
-	if *maxReassign < 1 {
+	if *maxReassign < 0 {
 		log.Printf("invalid number of max reassignments \"%d\"", *maxReassign)
 		flag.Usage()
 		os.Exit(3)
@@ -79,6 +80,8 @@ func main() {
 		os.Exit(2)
 	}
 
+	opl := emptypl()
+
 	for i := 0; i < *maxReassign; i++ {
 		ppl, err := Balance(pl, RebalanceConfig{
 			AllowLeaderRebalancing:    *allowLeader,
@@ -92,14 +95,19 @@ func main() {
 		}
 
 		if len(ppl.Partitions) == 0 {
-			os.Exit(5)
+			break
 		}
 
-		err = WritePartitionList(out, ppl)
-		if err != nil {
-			log.Printf("failed writing partition list: %s", err)
-			os.Exit(4)
-		}
+		opl.Partitions = append(opl.Partitions, ppl.Partitions...)
+	}
+
+	if *fullOutput {
+		opl = pl
+	}
+	err = WritePartitionList(out, opl)
+	if err != nil {
+		log.Printf("failed writing partition list: %s", err)
+		os.Exit(4)
 	}
 
 	os.Exit(0)
