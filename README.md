@@ -48,6 +48,8 @@ Usage of ./kafkabalancer:
     	Name of the file to read (if no file is specified, read from stdin)
   -input-json
     	Parse the input as JSON
+  -max-reassign int
+    	Maximum number of reassignments to generate (default 1)
   -min-replicas int
     	Minimum number of replicas for a partition to be eligible for rebalancing (default 2)
   -min-umbalance float
