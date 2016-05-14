@@ -29,7 +29,7 @@ type Partition struct {
 }
 
 var jsonInput = flag.Bool("input-json", false, "Parse the input as JSON")
-var input = flag.String("input", "", "File to read")
+var input = flag.String("input", "", "Name of the file to read (if no file is specified, read from stdin)")
 
 var allowLeader = flag.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
 var minReplicas = flag.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")

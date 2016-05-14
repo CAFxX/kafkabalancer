@@ -45,13 +45,37 @@ Usage of ./kafkabalancer:
   -broker-ids string
     	Comma-separated list of broker IDs (default "auto")
   -input string
-    	File to read
+    	Name of the file to read (if no file is specified, read from stdin)
   -input-json
     	Parse the input as JSON
   -min-replicas int
     	Minimum number of replicas for a partition to be eligible for rebalancing (default 2)
   -min-umbalance float
     	Minimum umbalance value required to perform rebalancing (default 1e-05)
+```
+
+### How to perform rebalancing
+
+First dump the list of partitions from your Kafka broker (`$ZK` is the
+comma-separated list of your zookeeper brokers):
+
+```
+kafka-topics.sh --zookeeper $ZK --describe > kafka-topics.txt
+```
+
+Next run kafkabalancer on the list (note: this assumes that all partitions have
+the same weight and no consumers; this is functionally OK but could lead to
+suboptimal load distribution). `kafkabalancer` will analyze the list and suggest
+one or more reassignments:
+
+```
+kafkabalancer -input kafka-topics.txt > reassignment.json
+```
+
+To perform the suggested change(s), run the following command:
+
+```
+kafka-reassign-partitions.sh --zookeeper $ZK --reassignment-json-file reassignment.json --execute
 ```
 
 ## Features
