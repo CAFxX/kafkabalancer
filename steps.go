@@ -76,9 +76,8 @@ func RemoveExtraReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, 
 		}
 
 		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
-		replicaset := toBrokerSet(p.Replicas)
 		for _, b := range brokersByLoad {
-			if _, found := replicaset[b]; found {
+			if inBrokerList(p.Replicas, b) {
 				return replacepl(p, b, -1), nil
 			}
 		}
@@ -100,10 +99,9 @@ func AddMissingReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, e
 		}
 
 		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
-		replicaset := toBrokerSet(p.Replicas)
 		for idx := len(brokersByLoad) - 1; idx >= 0; idx-- {
 			b := brokersByLoad[idx]
-			if _, found := replicaset[b]; !found {
+			if !inBrokerList(p.Replicas, b) {
 				return addpl(p, b), nil
 			}
 		}
@@ -118,21 +116,19 @@ func AddMissingReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, e
 // loaded ones
 func MoveDisallowedReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
 	loads := getBrokerLoad(pl)
+	bl := getBL(loads)
 
 	for _, p := range pl.Partitions {
-		brokersByLoad := getBrokerListByLoad(loads, p.Brokers)
-		brokersset := toBrokerSet(brokersByLoad)
+		brokersByLoad := getBrokerListByLoadBL(bl, p.Brokers)
 
 		for _, id := range p.Replicas {
-			if _, allowed := brokersset[id]; allowed {
+			if inBrokerList(brokersByLoad, id) {
 				continue
 			}
 
-			replicaset := toBrokerSet(p.Replicas)
-
 			for idx := len(brokersByLoad) - 1; idx >= 0; idx-- {
 				b := brokersByLoad[idx]
-				if _, alreadyInReplicas := replicaset[b]; alreadyInReplicas {
+				if inBrokerList(p.Replicas, b) {
 					continue
 				}
 
@@ -157,7 +153,8 @@ func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList,
 		}
 	}
 
-	su := getUnbalance(loads)
+	bl := getBL(loads)
+	su := getUnbalanceBL(bl)
 	cu := su
 
 	for _, p := range pl.Partitions {
@@ -165,32 +162,44 @@ func move(pl *PartitionList, cfg RebalanceConfig, leaders bool) (*PartitionList,
 			continue
 		}
 
-		replicaset := toBrokerSet(p.Replicas)
 		replicas := p.Replicas[1:]
 		if leaders {
 			replicas = p.Replicas[0:1]
 		}
 
 		for _, r := range replicas {
-			rload := loads[r]
-			loads[r] -= p.Weight
+			ridx := -1
+			var rload float64
+			for idx, b := range bl {
+				if b.ID == r {
+					ridx = idx
+					rload = b.Load
+					bl[idx].Load -= p.Weight
+				}
+			}
+			if ridx == -1 {
+				return nil, fmt.Errorf("assertion failed: replica %d not in broker loads %v", r, bl)
+			}
 
-			for _, b := range p.Brokers {
-				if _, alreadyInReplicas := replicaset[b]; alreadyInReplicas {
+			for idx, b := range bl {
+				if !inBrokerList(p.Brokers, b.ID) {
+					continue
+				}
+				if inBrokerList(p.Replicas, b.ID) {
 					continue
 				}
 
-				bload := loads[b]
-				loads[b] += p.Weight
-				u := getUnbalance(loads)
+				bload := bl[idx].Load
+				bl[idx].Load += p.Weight
+				u := getUnbalanceBL(bl)
 				if u < cu {
-					cu, cp, cr, cb = u, p, r, b
+					cu, cp, cr, cb = u, p, r, b.ID
 				}
 
-				loads[b] = bload
+				bl[idx].Load = bload
 			}
 
-			loads[r] = rload
+			bl[ridx].Load = rload
 		}
 	}
 

@@ -36,6 +36,16 @@ func toBrokerSet(brokers []BrokerID) map[BrokerID]struct{} {
 	return b
 }
 
+func inBrokerList(haystack []BrokerID, needle BrokerID) bool {
+	for _, b := range haystack {
+		if b == needle {
+			return true
+		}
+	}
+
+	return false
+}
+
 func getBrokerList(pl *PartitionList) []BrokerID {
 	b := make(map[BrokerID]struct{})
 	for _, p := range pl.Partitions {
@@ -68,6 +78,17 @@ func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []Broke
 	return r
 }
 
+func getBrokerListByLoadBL(loads []brokerLoad, brokers []BrokerID) []BrokerID {
+	r := make([]BrokerID, 0, len(brokers))
+	for _, load := range loads {
+		if inBrokerList(brokers, load.ID) {
+			r = append(r, load.ID)
+		}
+	}
+
+	return r
+}
+
 func getBrokerLoad(pl *PartitionList) map[BrokerID]float64 {
 	b := make(map[BrokerID]float64)
 	for _, p := range pl.Partitions {
@@ -84,9 +105,10 @@ func getBrokerLoad(pl *PartitionList) map[BrokerID]float64 {
 }
 
 func getUnbalance(loads map[BrokerID]float64) float64 {
-	var sumBrokerLoad float64
-	var maxBrokerLoad float64
+	return getUnbalanceBL(getBL(loads))
+}
 
+func getBL(loads map[BrokerID]float64) []brokerLoad {
 	// if we don't iterate in a constant order, float arithmetic causes the
 	// results to change in the LSBs
 	brokers := make([]brokerLoad, 0, len(loads))
@@ -95,6 +117,13 @@ func getUnbalance(loads map[BrokerID]float64) float64 {
 	}
 	sort.Sort(byBrokerLoad(brokers))
 
+	return brokers
+}
+
+func getUnbalanceBL(brokers []brokerLoad) float64 {
+	var sumBrokerLoad float64
+	var maxBrokerLoad float64
+
 	for _, broker := range brokers {
 		sumBrokerLoad += broker.Load
 		if maxBrokerLoad < broker.Load {
@@ -102,7 +131,7 @@ func getUnbalance(loads map[BrokerID]float64) float64 {
 		}
 	}
 
-	avgBrokerLoad := sumBrokerLoad / float64(len(loads))
+	avgBrokerLoad := sumBrokerLoad / float64(len(brokers))
 
 	var brokerUnbalance float64
 	for _, broker := range brokers {

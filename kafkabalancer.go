@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/profile"
 )
 
 type BrokerID int
@@ -32,6 +35,7 @@ var jsonInput = flag.Bool("input-json", false, "Parse the input as JSON")
 var input = flag.String("input", "", "Name of the file to read (if no file is specified, read from stdin)")
 var maxReassign = flag.Int("max-reassign", 1, "Maximum number of reassignments to generate")
 var fullOutput = flag.Bool("full-output", false, "Output the full")
+var pprof = flag.Bool("pprof", false, "Enable CPU profiling")
 
 var allowLeader = flag.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
 var minReplicas = flag.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
@@ -42,6 +46,12 @@ var brokerIDs = flag.String("broker-ids", "auto", "Comma-separated list of broke
 func main() {
 	flag.Parse()
 	var err error
+
+	if *pprof {
+		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	}
+
+	log.SetOutput(bufio.NewWriter(os.Stderr))
 
 	var brokers []BrokerID
 	if *brokerIDs != "auto" {
@@ -80,15 +90,19 @@ func main() {
 		os.Exit(2)
 	}
 
+	cfg := RebalanceConfig{
+		AllowLeaderRebalancing:    *allowLeader,
+		MinReplicasForRebalancing: *minReplicas,
+		MinUnbalance:              *minUnbalance,
+		Brokers:                   brokers,
+	}
+
+	log.Printf("rebalance config: %+v", cfg)
+
 	opl := emptypl()
 
 	for i := 0; i < *maxReassign; i++ {
-		ppl, err := Balance(pl, RebalanceConfig{
-			AllowLeaderRebalancing:    *allowLeader,
-			MinReplicasForRebalancing: *minReplicas,
-			MinUnbalance:              *minUnbalance,
-			Brokers:                   brokers,
-		})
+		ppl, err := Balance(pl, cfg)
 		if err != nil {
 			log.Printf("failed optimizing distribution: %s", err)
 			os.Exit(3)
@@ -109,6 +123,4 @@ func main() {
 		log.Printf("failed writing partition list: %s", err)
 		os.Exit(4)
 	}
-
-	os.Exit(0)
 }

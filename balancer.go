@@ -42,8 +42,6 @@ var steps = []func(*PartitionList, RebalanceConfig) (*PartitionList, error){
 // partitions listed in the argument. It returns a PartitionList with 0 or more
 // partition reassignments.
 func Balance(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
-	log.Printf("rebalance config: %+v", cfg)
-
 	for _, step := range steps {
 		stepFunc := runtime.FuncForPC(reflect.ValueOf(step).Pointer())
 		stepName := strings.TrimPrefix(stepFunc.Name(), "main.")
