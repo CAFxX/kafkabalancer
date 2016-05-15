@@ -7,6 +7,7 @@ import (
 	"runtime"
 )
 
+// RebalanceConfig contains the configuration that drives the rebalancing.
 type RebalanceConfig struct {
 	AllowLeaderRebalancing    bool
 	MinReplicasForRebalancing int
@@ -15,6 +16,8 @@ type RebalanceConfig struct {
 	Brokers []BrokerID
 }
 
+// DefaultRebalanceConfig returns the default RebalanceConfig. These values are
+// also the one used as the default values for the CLI flags.
 func DefaultRebalanceConfig() RebalanceConfig {
 	return RebalanceConfig{
 		AllowLeaderRebalancing:    false,
