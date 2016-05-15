@@ -1,6 +1,9 @@
 package main
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 type byBrokerID []BrokerID
 
@@ -112,4 +115,31 @@ func getUnbalance(loads map[BrokerID]float64) float64 {
 	}
 
 	return brokerUnbalance
+}
+
+func emptypl() *PartitionList {
+	return &PartitionList{Version: 1}
+}
+
+func singlepl(p Partition) *PartitionList {
+	return &PartitionList{Version: 1, Partitions: []Partition{p}}
+}
+
+func replacepl(p Partition, orig BrokerID, repl BrokerID) *PartitionList {
+	for idx, id := range p.Replicas {
+		if id == orig {
+			if repl == -1 {
+				p.Replicas = append(p.Replicas[:idx], p.Replicas[idx+1:]...)
+			} else {
+				p.Replicas[idx] = repl
+			}
+			return singlepl(p)
+		}
+	}
+	panic(fmt.Sprintf("partition %v replicas don't contain %d", p, orig))
+}
+
+func addpl(p Partition, b BrokerID) *PartitionList {
+	p.Replicas = append(p.Replicas, b)
+	return singlepl(p)
 }
