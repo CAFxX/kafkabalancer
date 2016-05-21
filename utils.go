@@ -27,6 +27,14 @@ func (a byBrokerLoad) Less(i, j int) bool {
 	return a[i].ID < a[j].ID
 }
 
+type byBrokerLoadID []brokerLoad
+
+func (a byBrokerLoadID) Len() int      { return len(a) }
+func (a byBrokerLoadID) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byBrokerLoadID) Less(i, j int) bool {
+	return a[i].ID < a[j].ID
+}
+
 func toBrokerSet(brokers []BrokerID) map[BrokerID]struct{} {
 	b := make(map[BrokerID]struct{})
 	for _, id := range brokers {
@@ -122,13 +130,9 @@ func getBL(loads map[BrokerID]float64) []brokerLoad {
 
 func getUnbalanceBL(brokers []brokerLoad) float64 {
 	var sumBrokerLoad float64
-	var maxBrokerLoad float64
 
 	for _, broker := range brokers {
 		sumBrokerLoad += broker.Load
-		if maxBrokerLoad < broker.Load {
-			maxBrokerLoad = broker.Load
-		}
 	}
 
 	avgBrokerLoad := sumBrokerLoad / float64(len(brokers))

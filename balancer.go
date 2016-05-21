@@ -31,6 +31,7 @@ var steps = []func(*PartitionList, RebalanceConfig) (*PartitionList, error){
 	ValidateWeights,
 	ValidateReplicas,
 	FillDefaults,
+	PrintBrokerLoads,
 	RemoveExtraReplicas,
 	AddMissingReplicas,
 	MoveDisallowedReplicas,

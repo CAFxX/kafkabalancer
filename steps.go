@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"sort"
+)
 
 // ValidateWeights make sure that either all partitions have an explicit,
 // strictly positive weight or that all partitions have no weight
@@ -61,6 +65,15 @@ func FillDefaults(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error
 			pl.Partitions[idx].NumReplicas = len(pl.Partitions[idx].Replicas)
 		}
 	}
+
+	return nil, nil
+}
+
+// PrintBrokerLoads prints the current loads on each broker
+func PrintBrokerLoads(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
+	loads := getBL(getBrokerLoad(pl))
+	sort.Sort(byBrokerLoadID(loads))
+	log.Printf("loads: %v", loads)
 
 	return nil, nil
 }
