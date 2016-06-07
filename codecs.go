@@ -71,6 +71,7 @@ func ParsePartitionList(in io.Reader, isJSON bool) (*PartitionList, error) {
 
 func WritePartitionList(out io.Writer, pl *PartitionList) error {
 	enc := json.NewEncoder(out)
+	pl.Version = 1
 	err := enc.Encode(pl)
 	if err != nil {
 		return fmt.Errorf("failed serializing json: %s", err)
