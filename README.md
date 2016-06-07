@@ -2,8 +2,8 @@
 Rebalance your kafka topics, partitions, replicas across your cluster
 
 ## Purpose
-`kafkabalancer` allows you to compute the set of rebalancing operations yielding a
-minimally-unbalanced kafka cluster, given a set of constraints:
+`kafkabalancer` allows you to compute the set of rebalancing operations yielding
+a minimally-unbalanced kafka cluster, given a set of constraints:
 
 - set of allowed brokers (globally, or per partition)
 - number of desired replicas (per partition)
@@ -84,17 +84,18 @@ kafka-reassign-partitions.sh --zookeeper $ZK --reassignment-json-file reassignme
 - parse the output of kafka-topic.sh --describe
 - parse the reassignment JSON format
 - output the reassignment JSON format
+- minimize leader unbalance (maximize global throughput)
 
 ### Planned
 - parse the output of kafka-offset.sh to get the per-partiton weights (number of
   messages)
 - fetch elsewhere additional metrics to refine the weights (e.g. number of
   consumers, size of messages)
-- minimize leader unbalance (maximize global throughput)
 - minimize same-broker colocation of partitions of the same topic (maximize
   per-topic throughput)
 - proactively minimize unbalance caused by broker failure (i.e. minimize
-  unbalance caused by one or more brokers failing)
+  unbalance caused by one or more brokers failing) keeping into considerations
+  how followers are elected to leaders when the leader fails
 - consider N-way rebalancing plans (e.g. swap two replicas) to avoid local
   minima
 - prefer to relocate "small" partitions to minimize the additional load due to
@@ -112,8 +113,8 @@ equalize the load:
 | 1    | 1,2      | 1,3      |
 | 2    | 2,1      | 2,1      |
 
-Setting `broker-ids=1,2,3,4` will move partition 1 from brokers 1,2 to brokers 4,3
-to equalize the load:
+Setting `broker-ids=1,2,3,4` will move partition 1 from brokers 1,2 to brokers
+4,3 to equalize the load:
 
 | Part | Original | Output   |
 |------|----------|----------|
@@ -160,6 +161,14 @@ load between brokers:
 |------|----------|----------|
 | 1    | 1,2,3    | 1,4,3    |
 | 2    | 1,2,4    | 1,2,4    |
+| 3    | 1,2,3    | 1,2,3    |
+
+If leader moving is enabled, also the leaders are eligible for rebalancing:
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2,3    | 4,2,1    |
+| 2    | 1,2,4    | 3,2,4    |
 | 3    | 1,2,3    | 1,2,3    |
 
 ## Author
