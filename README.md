@@ -2,7 +2,7 @@
 Rebalance your kafka topics, partitions, replicas across your cluster
 
 ## Purpose
-kafkabalancer allows you to compute the set of rebalancing operations yielding a
+`kafkabalancer` allows you to compute the set of rebalancing operations yielding a
 minimally-unbalanced kafka cluster, given a set of constraints:
 
 - set of allowed brokers (globally, or per partition)
@@ -24,12 +24,12 @@ automated framework like the following:
 
 ```
   forever:
-    if !cluster_is_nominal:
+    if !kafka_cluster_is_nominal:
       continue
     state = get_current_state()
     change = kafkabalancer(state)
     if change:
-      apply change
+      apply(change)
 ```    
 
 ## Installation
@@ -65,7 +65,7 @@ comma-separated list of your zookeeper brokers):
 kafka-topics.sh --zookeeper $ZK --describe > kafka-topics.txt
 ```
 
-Next run kafkabalancer on the list (note: this assumes that all partitions have
+Next run `kafkabalancer` on the list (note: this assumes that all partitions have
 the same weight and no consumers; this is functionally OK but could lead to
 suboptimal load distribution). `kafkabalancer` will analyze the list and suggest
 one or more reassignments:
@@ -93,37 +93,77 @@ kafka-reassign-partitions.sh --zookeeper $ZK --reassignment-json-file reassignme
 - minimize leader unbalance (maximize global throughput)
 - minimize same-broker colocation of partitions of the same topic (maximize
   per-topic throughput)
-- proactively minimize unbalance caused by broker failure
-- consider N-way rebalancing plans (e.g. swap two replicas)
+- proactively minimize unbalance caused by broker failure (i.e. minimize
+  unbalance caused by one or more brokers failing)
+- consider N-way rebalancing plans (e.g. swap two replicas) to avoid local
+  minima
+- prefer to relocate "small" partitions to minimize the additional load due to
+  moving data between brokers
 
 ## Scenarios
-This section lists some examples of how kafkabalancer operates.
+This section lists some examples of how `kafkabalancer` operates.
 
 ### Adding brokers
-Two partitions with the following set of replicas: [1 2], [2 1].
-- add one broker: kafkabalancer will yield [1 3], [2 1]
-- add two brokers: kafkabalancer will yield [4 3], [2 1]
+Setting `broker-ids=1,2,3` will move partition 1 from broker 2 to broker 3 to
+equalize the load:
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2      | 1,3      |
+| 2    | 2,1      | 2,1      |
+
+Setting `broker-ids=1,2,3,4` will move partition 1 from brokers 1,2 to brokers 4,3
+to equalize the load:
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2      | 4,3      |
+| 2    | 2,1      | 2,1      |
 
 ### Removing brokers
-Three partitions with the following set of replicas: [1 2], [1], [3].
-- remove one broker: kafkabalancer will yield [1 2], [1], [2]
-- remove two brokers: kafkabalancer will return error (first partition needs two
-  brokers)
+Setting `broker-ids=1,2` will move partition 3 from broker 3 to broker 2 to
+equalize the load:
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2      | 1,2      |
+| 2    | 1        | 1        |
+| 3    | 3        | 2        |
+
+Setting `broker-ids=1` will return error because the partition 1 requires 2
+replicas.
 
 ### Add replicas
-Three partitions with the following set of replicas: [1 2], [1 3], [3].
-- add one replica to the third partition: kafkabalancer will yield [1 2], [1 3], [2 3]
+Setting `NumReplicas=2` for partition 3 will add a replica on broker 2 to
+equalize the load.
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2      | 1,2      |
+| 2    | 1,3      | 1,3      |
+| 3    | 3        | 2,3      |
 
 ### Remove replicas
-Two partitions with the following set of replicas: [1 2], [1]
-- remove one replica from the first partition: kafkabalancer will yield [2], [1]
+Setting `NumReplicas=1` for partition 1 will remove the replica from broker 1 to
+equalize the load.
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2      | 2        |
+| 2    | 1        | 1        |
 
 ### Automated rebalancing
-Three partition with the following set of replicas: [1 2 3], [1 2 4], [1 2 3]
-- kafkabalancer will yield [1 4 3], [1 2 4], [1 2 3]
+If no changes need to be made, `kafkabalancer` will simply seek to equalize the
+load between brokers:
+
+| Part | Original | Output   |
+|------|----------|----------|
+| 1    | 1,2,3    | 1,4,3    |
+| 2    | 1,2,4    | 1,2,4    |
+| 3    | 1,2,3    | 1,2,3    |
 
 ## Author
-Carlo Alberto Ferraris
+Carlo Alberto Ferraris ([@cafxx](https://twitter.com/cafxx))
 
 ## License
 [MIT](LICENSE)
