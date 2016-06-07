@@ -34,8 +34,8 @@ var steps = []func(*PartitionList, RebalanceConfig) (*PartitionList, error){
 	RemoveExtraReplicas,
 	AddMissingReplicas,
 	MoveDisallowedReplicas,
-	MoveNonLeaders,
 	MoveLeaders,
+	MoveNonLeaders,
 }
 
 // Balance analyzes the workload distribution among brokers for the
