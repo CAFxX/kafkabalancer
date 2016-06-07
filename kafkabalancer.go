@@ -1,14 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"log"
 	"os"
+	"io"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/profile"
+	"github.com/cafxx/kafkabalancer/logbuf"
 )
 
 type BrokerID int
@@ -44,14 +45,18 @@ var minUnbalance = flag.Float64("min-umbalance", DefaultRebalanceConfig().MinUnb
 var brokerIDs = flag.String("broker-ids", "auto", "Comma-separated list of broker IDs")
 
 func main() {
-	flag.Parse()
+	os.Exit(run(os.Stdin, os.Stdout, os.Stderr, os.Args))
+}
+
+func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
+	flag.CommandLine.Parse(args[1:])
 	var err error
 
 	if *pprof {
 		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 	}
 
-	log.SetOutput(bufio.NewWriter(os.Stderr))
+	log.SetOutput(logbuf.NewDefaultBufferingWriter(e))
 
 	var brokers []BrokerID
 	if *brokerIDs != "auto" {
@@ -60,7 +65,7 @@ func main() {
 			if cerr != nil {
 				log.Printf("failed parsing broker list \"%s\": %s", *brokerIDs, err)
 				flag.Usage()
-				os.Exit(3)
+				return 3
 			}
 			brokers = append(brokers, BrokerID(b))
 		}
@@ -69,25 +74,27 @@ func main() {
 	if *maxReassign < 0 {
 		log.Printf("invalid number of max reassignments \"%d\"", *maxReassign)
 		flag.Usage()
-		os.Exit(3)
+		return 3
 	}
 
-	in := os.Stdin
+	in := i
 	if *input != "" {
 		in, err = os.Open(*input)
 		if err != nil {
 			log.Printf("failed opening file %s: %s", *input, err)
-			os.Exit(1)
+			return 1
 		}
-		defer in.Close()
+		if inc, ok := in.(io.Closer); ok {
+			defer inc.Close()
+		}
 	}
 
-	out := os.Stdout
+	out := o
 
 	pl, err := ParsePartitionList(in, *jsonInput)
 	if err != nil {
 		log.Printf("failed parsing partition list: %s", err)
-		os.Exit(2)
+		return 2
 	}
 
 	cfg := RebalanceConfig{
@@ -105,7 +112,7 @@ func main() {
 		ppl, err := Balance(pl, cfg)
 		if err != nil {
 			log.Printf("failed optimizing distribution: %s", err)
-			os.Exit(3)
+			return 3
 		}
 
 		if len(ppl.Partitions) == 0 {
@@ -121,6 +128,8 @@ func main() {
 	err = WritePartitionList(out, opl)
 	if err != nil {
 		log.Printf("failed writing partition list: %s", err)
-		os.Exit(4)
+		return 4
 	}
+
+	return 0
 }
