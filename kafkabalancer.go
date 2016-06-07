@@ -56,7 +56,9 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 	}
 
-	log.SetOutput(logbuf.NewDefaultBufferingWriter(e))
+	be := logbuf.NewDefaultBufferingWriter(e)
+	defer be.Close()
+	log.SetOutput(be)
 
 	var brokers []BrokerID
 	if *brokerIDs != "auto" {
