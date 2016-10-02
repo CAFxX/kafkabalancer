@@ -116,7 +116,7 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 		pl, err = GetPartitionListFromReader(in, *jsonInput)
 	}
 	if err != nil {
-		log.Printf("failed parsing partition list: %s", err)
+		log.Printf("failed getting partition list: %s", err)
 		return 2
 	}
 
