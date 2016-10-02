@@ -52,7 +52,7 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 	pprof := f.Bool("pprof", false, "Enable CPU profiling")
 	allowLeader := f.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
 	minReplicas := f.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
-	minUnbalance := f.Float64("min-umbalance", DefaultRebalanceConfig().MinUnbalance, "Minimum umbalance value required to perform rebalancing")
+	minUnbalance := f.Float64("min-unbalance", DefaultRebalanceConfig().MinUnbalance, "Minimum unbalance value required to perform rebalancing")
 	brokerIDs := f.String("broker-ids", "auto", "Comma-separated list of broker IDs")
 	help := f.Bool("help", false, "Display usage")
 	f.Usage = func() {
