@@ -16,7 +16,7 @@ func TestParsingJSON(t *testing.T) {
                  {"topic":"foo2","partition":1,"replicas":[1,4]}]
   }`
 
-	_, err := ParsePartitionList(bytes.NewBufferString(jsonStr), true)
+	_, err := GetPartitionListFromReader(bytes.NewBufferString(jsonStr), true)
 
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
@@ -33,7 +33,7 @@ func TestWritingJSON(t *testing.T) {
                  {"topic":"foo2","partition":1,"replicas":[1,4]}]
   }`
 
-	pl, err := ParsePartitionList(bytes.NewBufferString(jsonStr), true)
+	pl, err := GetPartitionListFromReader(bytes.NewBufferString(jsonStr), true)
 
 	if err != nil {
 		t.Skip()
@@ -54,7 +54,7 @@ func TestParsingText(t *testing.T) {
 	Topic: test	Partition: 7	Leader: 0	Replicas: 0,1,2	Isr: 0,1,2
 	Topic: test	Partition: 8	Leader: 1	Replicas: 1,2,0	Isr: 0,1,2`
 
-	_, err := ParsePartitionList(bytes.NewBufferString(textStr), false)
+	_, err := GetPartitionListFromReader(bytes.NewBufferString(textStr), false)
 
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)

@@ -2,14 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"os"
-	"io"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/profile"
 	"github.com/cafxx/kafkabalancer/logbuf"
+	"github.com/pkg/profile"
 )
 
 type BrokerID int
@@ -32,41 +33,44 @@ type Partition struct {
 	NumConsumers int        `json:"num_consumers,omitempty"` // default: 1
 }
 
-var jsonInput = flag.Bool("input-json", false, "Parse the input as JSON")
-var input = flag.String("input", "", "Name of the file to read (if no file is specified, read from stdin)")
-var maxReassign = flag.Int("max-reassign", 1, "Maximum number of reassignments to generate")
-var fullOutput = flag.Bool("full-output", false, "Output the full")
-var pprof = flag.Bool("pprof", false, "Enable CPU profiling")
-
-var allowLeader = flag.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
-var minReplicas = flag.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
-var minUnbalance = flag.Float64("min-umbalance", DefaultRebalanceConfig().MinUnbalance, "Minimum umbalance value required to perform rebalancing")
-
-var brokerIDs = flag.String("broker-ids", "auto", "Comma-separated list of broker IDs")
-
 func main() {
 	os.Exit(run(os.Stdin, os.Stdout, os.Stderr, os.Args))
 }
 
 func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
-	flag.CommandLine.Parse(args[1:])
-	var err error
+	be := logbuf.NewDefaultBufferingWriter(e)
+	defer be.Close()
+	log.SetOutput(be)
+
+	f := flag.NewFlagSet("kafkabalancer", flag.ContinueOnError)
+	f.SetOutput(be)
+	jsonInput := f.Bool("input-json", false, "Parse the input as JSON")
+	input := f.String("input", "", "Name of the file to read (if no file is specified read from stdin, can not be used with -from-zk)")
+	fromZK := f.String("from-zk", "", "Zookeeper connection string (can not be used with -input)")
+	maxReassign := f.Int("max-reassign", 1, "Maximum number of reassignments to generate")
+	fullOutput := f.Bool("full-output", false, "Output the full partition list: by default only the changes are printed")
+	pprof := f.Bool("pprof", false, "Enable CPU profiling")
+	allowLeader := f.Bool("allow-leader", DefaultRebalanceConfig().AllowLeaderRebalancing, "Consider the partition leader eligible for rebalancing")
+	minReplicas := f.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
+	minUnbalance := f.Float64("min-umbalance", DefaultRebalanceConfig().MinUnbalance, "Minimum umbalance value required to perform rebalancing")
+	brokerIDs := f.String("broker-ids", "auto", "Comma-separated list of broker IDs")
+	f.Usage = func() {
+		fmt.Fprintf(be, "Usage of %s:\n", args[0])
+		f.PrintDefaults()
+	}
+	f.Parse(args[1:])
 
 	if *pprof {
 		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 	}
-
-	be := logbuf.NewDefaultBufferingWriter(e)
-	defer be.Close()
-	log.SetOutput(be)
 
 	var brokers []BrokerID
 	if *brokerIDs != "auto" {
 		for _, broker := range strings.Split(*brokerIDs, ",") {
 			b, cerr := strconv.Atoi(broker)
 			if cerr != nil {
-				log.Printf("failed parsing broker list \"%s\": %s", *brokerIDs, err)
-				flag.Usage()
+				log.Printf("failed parsing broker list \"%s\": %s", *brokerIDs, cerr)
+				f.Usage()
 				return 3
 			}
 			brokers = append(brokers, BrokerID(b))
@@ -75,9 +79,17 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 
 	if *maxReassign < 0 {
 		log.Printf("invalid number of max reassignments \"%d\"", *maxReassign)
-		flag.Usage()
+		f.Usage()
 		return 3
 	}
+
+	if *input != "" && *fromZK != "" {
+		log.Print("can't specify both -input and -from-zk")
+		f.Usage()
+		return 3
+	}
+
+	var err error
 
 	in := i
 	if *input != "" {
@@ -86,14 +98,17 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 			log.Printf("failed opening file %s: %s", *input, err)
 			return 1
 		}
-		if inc, ok := in.(io.Closer); ok {
-			defer inc.Close()
-		}
+		defer in.(io.Closer).Close()
 	}
 
 	out := o
 
-	pl, err := ParsePartitionList(in, *jsonInput)
+	var pl *PartitionList
+	if *fromZK != "" {
+		pl, err = GetPartitionListFromZookeeper(*fromZK)
+	} else {
+		pl, err = GetPartitionListFromReader(in, *jsonInput)
+	}
 	if err != nil {
 		log.Printf("failed parsing partition list: %s", err)
 		return 2
@@ -123,6 +138,8 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 
 		opl.Partitions = append(opl.Partitions, ppl.Partitions...)
 	}
+
+	be.Flush(true)
 
 	if *fullOutput {
 		opl = pl

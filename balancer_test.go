@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"log"
 	"reflect"
 	"testing"
 )
@@ -115,6 +117,7 @@ func TestBalancing(t *testing.T) {
 	}
 
 	for _, c := range tc {
+		log.SetOutput(&bytes.Buffer{})
 		pl := wrap(c.pl)
 
 		cfg := DefaultRebalanceConfig()

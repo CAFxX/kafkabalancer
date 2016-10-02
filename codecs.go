@@ -8,9 +8,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	kazoo "github.com/wvanbergen/kazoo-go"
 )
 
-func ParsePartitionList(in io.Reader, isJSON bool) (*PartitionList, error) {
+func GetPartitionListFromReader(in io.Reader, isJSON bool) (*PartitionList, error) {
 	pl := &PartitionList{}
 
 	if isJSON {
@@ -78,4 +80,42 @@ func WritePartitionList(out io.Writer, pl *PartitionList) error {
 	}
 
 	return nil
+}
+
+func GetPartitionListFromZookeeper(zkConnStr string) (*PartitionList, error) {
+	zk, err := kazoo.NewKazooFromConnectionString(zkConnStr, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing zk connection string: %v", err)
+	}
+	defer zk.Close()
+
+	pl := &PartitionList{}
+
+	topics, err := zk.Topics()
+	if err != nil {
+		return nil, fmt.Errorf("failed reading topic list from zk: %v", err)
+	}
+
+	for _, topic := range topics {
+		partitions, err := topic.Partitions()
+		if err != nil {
+			return nil, fmt.Errorf("failed reading partition list for topic %s from zk: %v", topic.Name, err)
+		}
+
+		for _, partition := range partitions {
+			replicas := make([]BrokerID, 0, len(partition.Replicas))
+			for _, replica := range partition.Replicas {
+				replicas = append(replicas, BrokerID(replica))
+			}
+			pl.Partitions = append(pl.Partitions, Partition{
+				Topic:     TopicName(topic.Name),
+				Partition: PartitionID(partition.ID),
+				Replicas:  replicas,
+				// NumConsumers: <number of consumer groups>,
+				// Weight: <number of messages> or <size of messages>,
+			})
+		}
+	}
+
+	return pl, nil
 }

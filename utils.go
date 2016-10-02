@@ -104,10 +104,6 @@ func getBrokerLoad(pl *PartitionList) map[BrokerID]float64 {
 	return b
 }
 
-func getUnbalance(loads map[BrokerID]float64) float64 {
-	return getUnbalanceBL(getBL(loads))
-}
-
 func getBL(loads map[BrokerID]float64) []brokerLoad {
 	// if we don't iterate in a constant order, float arithmetic causes the
 	// results to change in the LSBs
