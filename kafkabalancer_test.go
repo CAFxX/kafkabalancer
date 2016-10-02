@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func TestMainHelp(t *testing.T) {
+	json, _ := ioutil.ReadFile("test/test.json")
+	in, out, err := bytes.NewBuffer(json), &bytes.Buffer{}, &bytes.Buffer{}
+	rv := run(in, out, err, []string{"kafkabalancer", "-help"})
+	if rv != 0 {
+		t.Fatalf("unexpected rv %d", rv)
+	}
+	if !strings.Contains(err.String(), "Usage of kafkabalancer:") {
+		t.Fatalf("missing expected string: %s", err.String())
+	}
+}
+
 func TestMainStdin(t *testing.T) {
 	json, _ := ioutil.ReadFile("test/test.json")
 	in, out, err := bytes.NewBuffer(json), &bytes.Buffer{}, &bytes.Buffer{}

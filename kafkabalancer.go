@@ -54,6 +54,7 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 	minReplicas := f.Int("min-replicas", DefaultRebalanceConfig().MinReplicasForRebalancing, "Minimum number of replicas for a partition to be eligible for rebalancing")
 	minUnbalance := f.Float64("min-umbalance", DefaultRebalanceConfig().MinUnbalance, "Minimum umbalance value required to perform rebalancing")
 	brokerIDs := f.String("broker-ids", "auto", "Comma-separated list of broker IDs")
+	help := f.Bool("help", false, "Display usage")
 	f.Usage = func() {
 		fmt.Fprintf(be, "Usage of %s:\n", args[0])
 		f.PrintDefaults()
@@ -62,6 +63,11 @@ func run(i io.Reader, o io.Writer, e io.Writer, args []string) int {
 
 	if *pprof {
 		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	}
+
+	if *help {
+		f.Usage()
+		return 0
 	}
 
 	var brokers []BrokerID
