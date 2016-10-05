@@ -100,6 +100,8 @@ kafka-reassign-partitions.sh --zookeeper $ZK --reassignment-json-file reassignme
   minima
 - prefer to relocate "small" partitions to minimize the additional load due to
   moving data between brokers
+- use something like https://github.com/wvanbergen/kazoo-go to query state directly
+- use something like https://github.com/wvanbergen/kazoo-go to apply changes directly
 
 ## Scenarios
 This section lists some examples of how `kafkabalancer` operates.
