@@ -114,6 +114,26 @@ func TestBalancing(t *testing.T) {
 			},
 			cfg: &cfg6Brokers,
 		},
+
+		// remove extra replica
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0, NumReplicas: 2},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 3}, Weight: 1.0, NumReplicas: 2, Brokers: []BrokerID{1, 2, 3}},
+			},
+		},
+
+		// add missing replica
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3}},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3}},
+			},
+		},
 	}
 
 	for _, c := range tc {
