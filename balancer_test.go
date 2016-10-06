@@ -176,6 +176,14 @@ func TestBalancing(t *testing.T) {
 			},
 			err: "has negative weight",
 		},
+
+		// unable to add replica
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}, NumReplicas: 3},
+			},
+			err: "unable to pick replica to add",
+		},
 	}
 
 	for _, c := range tc {
