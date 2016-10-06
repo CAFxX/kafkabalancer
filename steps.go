@@ -12,7 +12,7 @@ func ValidateWeights(pl *PartitionList, _ RebalanceConfig) (*PartitionList, erro
 			return nil, fmt.Errorf("partition %v has no weight", p)
 		}
 		if !hasWeights && p.Weight != 0 {
-			return nil, fmt.Errorf("partition %v has weight", p)
+			return nil, fmt.Errorf("partition %v has no weight", pl.Partitions[0])
 		}
 		if p.Weight < 0 {
 			return nil, fmt.Errorf("partition %v has negative weight", p)

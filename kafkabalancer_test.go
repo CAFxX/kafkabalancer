@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -120,5 +121,34 @@ func TestMainFullOutput(t *testing.T) {
 	rv := run(nil, out, err, []string{"kafkabalancer", "-input-json", "-input=test/test.json", "-full-output"})
 	if rv != 0 {
 		t.Fatalf("unexpected rv %d", rv)
+	}
+}
+
+type failwriter struct{}
+
+func (_ *failwriter) Write(_ []byte) (int, error) {
+	return 0, errors.New("fail")
+}
+
+func TestBrokenOutputStream(t *testing.T) {
+	out := &failwriter{}
+	err := &bytes.Buffer{}
+	rv := run(nil, out, err, []string{"kafkabalancer", "-input-json", "-input=test/test.json"})
+	if rv != 4 {
+		t.Fatalf("unexpected rv %d", rv)
+	}
+	if !strings.Contains(err.String(), "failed writing partition list") {
+		t.Fatalf("missing expected string: %s", err.String())
+	}
+}
+
+func TestBrokenZkConnString(t *testing.T) {
+	out, err := &bytes.Buffer{}, &bytes.Buffer{}
+	rv := run(nil, out, err, []string{"kafkabalancer", "-from-zk=."})
+	if rv != 2 {
+		t.Fatalf("unexpected rv %d", rv)
+	}
+	if !strings.Contains(err.String(), "failed parsing zk connection string") {
+		t.Fatalf("missing expected string: %s", err.String())
 	}
 }

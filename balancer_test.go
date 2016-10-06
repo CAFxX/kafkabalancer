@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 )
 
 type testCase struct {
 	pl  []Partition
 	ppl []Partition
-	err error
+	err string
 	cfg *RebalanceConfig
 }
 
@@ -134,6 +135,47 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3}},
 			},
 		},
+
+		// duplicate replicas
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 1}, Weight: 1.0, Brokers: []BrokerID{1, 2}},
+			},
+			err: "has duplicated replicas",
+		},
+
+		// all weights missing
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1}},
+			},
+		},
+
+		// one weight missing
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1}},
+			},
+			err: "has no weight",
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1}, Weight: 1.0},
+			},
+			err: "has no weight",
+		},
+
+		// negative weight
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1}, Weight: -1.0},
+			},
+			err: "has negative weight",
+		},
 	}
 
 	for _, c := range tc {
@@ -147,12 +189,18 @@ func TestBalancing(t *testing.T) {
 
 		ppl, err := Balance(pl, cfg)
 
-		if !reflect.DeepEqual(wrap(c.ppl), ppl) {
+		if c.err != "" {
+			if !strings.Contains(err.Error(), c.err) {
+				t.Errorf("expected error %v, got %v", c.err, err)
+			}
+			if ppl != nil {
+				t.Errorf("expected nil ppl, got %v", ppl)
+			}
+		} else if err != nil {
+			t.Errorf("unexpected error %v", err)
+		} else if !reflect.DeepEqual(wrap(c.ppl), ppl) {
 			t.Errorf("expected %v, got %v", wrap(c.ppl), ppl)
 			t.Logf("pl %v", c.pl)
-		}
-		if c.err != nil && err == nil || c.err == nil && err != nil {
-			t.Errorf("expected error %v, got %v", c.err, err)
 		}
 	}
 }
