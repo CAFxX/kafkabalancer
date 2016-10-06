@@ -55,19 +55,6 @@ func GetPartitionListFromReader(in io.Reader, isJSON bool) (*PartitionList, erro
 		return nil, fmt.Errorf("empty partition list")
 	}
 
-	weightless := pl.Partitions[0].Weight == 0
-	for idx, p := range pl.Partitions {
-		if p.Weight == 0 && !weightless {
-			return nil, fmt.Errorf("topic %s partition %d has no weight but other topics have it", p.Topic, p.Partition)
-		} else if p.Weight != 0 && weightless {
-			return nil, fmt.Errorf("topic %s partition %d has a weight but other topics don't have it", p.Topic, p.Partition)
-		} else if p.Weight < 0 {
-			return nil, fmt.Errorf("topic %s partition %d has a negative weight", p.Topic, p.Partition)
-		} else if p.Weight == 0 && weightless {
-			pl.Partitions[idx].Weight = 1
-		}
-	}
-
 	return pl, nil
 }
 
