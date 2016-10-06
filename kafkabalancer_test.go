@@ -152,3 +152,15 @@ func TestBrokenZkConnString(t *testing.T) {
 		t.Fatalf("missing expected string: %s", err.String())
 	}
 }
+
+func TestBrokenData(t *testing.T) {
+	j := "{\"version\":1,\"partitions\":[{\"topic\":\"foo1\",\"partition\":1,\"replicas\":[1,2],\"num_replicas\":3}]}"
+	in, out, err := bytes.NewBufferString(j), &bytes.Buffer{}, &bytes.Buffer{}
+	rv := run(in, out, err, []string{"kafkabalancer", "-input-json"})
+	if rv != 3 {
+		t.Fatalf("unexpected rv %d", rv)
+	}
+	if !strings.Contains(err.String(), "unable to pick replica to add") {
+		t.Fatalf("missing expected string: %s", err.String())
+	}
+}
