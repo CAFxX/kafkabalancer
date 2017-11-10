@@ -44,19 +44,47 @@ Usage of ./kafkabalancer:
     	Consider the partition leader eligible for rebalancing
   -broker-ids string
     	Comma-separated list of broker IDs (default "auto")
+  -from-zk string
+    	Zookeeper connection string (can not be used with -input)
+  -full-output
+    	Output the full partition list: by default only the changes are printed
+  -help
+    	Display usage
   -input string
-    	Name of the file to read (if no file is specified, read from stdin)
+    	Name of the file to read (if no file is specified read from stdin, can not be used with -from-zk)
   -input-json
     	Parse the input as JSON
   -max-reassign int
     	Maximum number of reassignments to generate (default 1)
   -min-replicas int
     	Minimum number of replicas for a partition to be eligible for rebalancing (default 2)
-  -min-umbalance float
-    	Minimum umbalance value required to perform rebalancing (default 1e-05)
+  -min-unbalance float
+    	Minimum unbalance value required to perform rebalancing (default 1e-05)
+  -pprof
+    	Enable CPU profiling
 ```
 
 ### How to perform rebalancing
+
+#### Getting the Kafka cluster state from zookeeper
+
+To emit the first suggested rebalancing operation for your Kafka cluster (`$ZK` is the
+comma-separated list of your zookeeper brokers):
+
+```
+kafkabalancer -from-zk $ZK > reassignment.json
+```
+
+To perform the suggested change, run the following command:
+
+```
+kafka-reassign-partitions.sh --zookeeper $ZK --reassignment-json-file reassignment.json --execute
+```
+
+If you want to generate/run more than a single rebalancing operation, specify a value greater than
+`1` for `-max-reassign`.
+
+#### Getting the Kafka cluster state from a dump of the partition list
 
 First dump the list of partitions from your Kafka broker (`$ZK` is the
 comma-separated list of your zookeeper brokers):
@@ -80,8 +108,11 @@ To perform the suggested change(s), run the following command:
 kafka-reassign-partitions.sh --zookeeper $ZK --reassignment-json-file reassignment.json --execute
 ```
 
+If you want to generate/run more than a single rebalancing operation, specify a value greater than
+`1` for `-max-reassign`.
+
 ## Features
-- parse the output of kafka-topic.sh --describe
+- parse the output of kafka-topic.sh --describe or the Kafka cluster state in Zookeeper
 - parse the reassignment JSON format
 - output the reassignment JSON format
 - minimize leader unbalance (maximize global throughput)
