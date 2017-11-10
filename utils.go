@@ -74,6 +74,12 @@ func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []Broke
 	for _, broker := range b {
 		r = append(r, broker.ID)
 	}
+	// add the allowed brokers we don't have the load of
+	for _, ID := range brokers {
+		if !inBrokerList(r, ID) {
+			r = append(r, ID)
+		}
+	}
 
 	return r
 }
@@ -83,6 +89,12 @@ func getBrokerListByLoadBL(loads []brokerLoad, brokers []BrokerID) []BrokerID {
 	for _, load := range loads {
 		if inBrokerList(brokers, load.ID) {
 			r = append(r, load.ID)
+		}
+	}
+	// add the allowed brokers we don't have the load of
+	for _, ID := range brokers {
+		if !inBrokerList(r, ID) {
+			r = append(r, ID)
 		}
 	}
 

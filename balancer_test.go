@@ -32,6 +32,9 @@ func TestBalancing(t *testing.T) {
 	cfg6Brokers := DefaultRebalanceConfig()
 	cfg6Brokers.Brokers = []BrokerID{1, 2, 3, 4, 5, 6}
 
+	cfg6BrokersIrregular := DefaultRebalanceConfig()
+	cfg6BrokersIrregular.Brokers = []BrokerID{1, 2, 3, 4, 5, 7}
+
 	tc := []testCase{
 		testCase{
 			pl: []Partition{
@@ -114,6 +117,28 @@ func TestBalancing(t *testing.T) {
 				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{1, 2, 3}, Weight: 1.0},
 			},
 			cfg: &cfg6Brokers,
+		},
+
+		// move from not allowed broker
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 3, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 4, 6}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 3, 5}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 6}},
+			},
+			cfg: &cfg6Brokers,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{1, 3, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 4, 6}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 4, 7}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
 		},
 
 		// remove extra replica
