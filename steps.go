@@ -114,7 +114,7 @@ func AddMissingReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, e
 
 // MoveDisallowedReplicas moves replicas from non-allowed brokers to the least
 // loaded ones
-func MoveDisallowedReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionList, error) {
+func MoveDisallowedReplicas(pl *PartitionList, cfg RebalanceConfig) (*PartitionList, error) {
 	loads := getBrokerLoad(pl)
 	bl := getBL(loads)
 
@@ -126,8 +126,7 @@ func MoveDisallowedReplicas(pl *PartitionList, _ RebalanceConfig) (*PartitionLis
 				continue
 			}
 
-			for idx := len(brokersByLoad) - 1; idx >= 0; idx-- {
-				b := brokersByLoad[idx]
+			for _, b := range brokersByLoad {
 				if inBrokerList(p.Replicas, b) {
 					continue
 				}

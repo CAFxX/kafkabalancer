@@ -63,6 +63,7 @@ func getBrokerList(pl *PartitionList) []BrokerID {
 	return brokers
 }
 
+// get the list of brokers in order from least loaded to most loaded
 func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []BrokerID {
 	b := make([]brokerLoad, 0, len(brokers))
 	for _, id := range brokers {
@@ -77,13 +78,14 @@ func getBrokerListByLoad(loads map[BrokerID]float64, brokers []BrokerID) []Broke
 	// add the allowed brokers we don't have the load of
 	for _, ID := range brokers {
 		if !inBrokerList(r, ID) {
-			r = append(r, ID)
+			r = append([]BrokerID{ID}, r...)
 		}
 	}
 
 	return r
 }
 
+// get the list of brokers in order from least loaded to most loaded
 func getBrokerListByLoadBL(loads []brokerLoad, brokers []BrokerID) []BrokerID {
 	r := make([]BrokerID, 0, len(brokers))
 	for _, load := range loads {
@@ -94,7 +96,7 @@ func getBrokerListByLoadBL(loads []brokerLoad, brokers []BrokerID) []BrokerID {
 	// add the allowed brokers we don't have the load of
 	for _, ID := range brokers {
 		if !inBrokerList(r, ID) {
-			r = append(r, ID)
+			r = append([]BrokerID{ID}, r...)
 		}
 	}
 

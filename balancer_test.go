@@ -141,6 +141,160 @@ func TestBalancing(t *testing.T) {
 			cfg: &cfg6BrokersIrregular,
 		},
 
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 6}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 6}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 6}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 6, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{5, 1, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{5, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{7, 1, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+		testCase{
+			pl: []Partition{
+				Partition{Topic: "a", Partition: 1, Replicas: []BrokerID{2, 1, 7}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 2, Replicas: []BrokerID{2, 1, 5}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 3, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 4, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 5, Replicas: []BrokerID{1, 3, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 6, Replicas: []BrokerID{1, 4, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 7, Replicas: []BrokerID{5, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 8, Replicas: []BrokerID{7, 1, 2}, Weight: 1.0},
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{6, 1, 2}, Weight: 1.0},
+			},
+			ppl: []Partition{
+				Partition{Topic: "a", Partition: 9, Replicas: []BrokerID{3, 1, 2}, Weight: 1.0, NumReplicas: 3, Brokers: []BrokerID{1, 2, 3, 4, 5, 7}},
+			},
+			cfg: &cfg6BrokersIrregular,
+		},
+
 		// remove extra replica
 		testCase{
 			pl: []Partition{
