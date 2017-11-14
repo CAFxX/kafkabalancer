@@ -205,8 +205,6 @@ Where `(Replicas)` and `(Consumers)` are, respectively, the number of replicas a
 
 These steps simply validate that the input data is consistent and they fill in any default value that is not explicitely defined.
 
-ValidateWeights, ValidateReplicas, FillDefaults, RemoveExtraReplicas, AddMissingReplicas, MoveDisallowedReplicas, MoveLeaders, MoveNonLeaders,
-
 ### `RemoveExtraReplicas` and `AddMissingReplicas`
 
 These steps deal with any changes in the desired number of replicas by either removing replicas from the highest-loaded cluster nodes or by adding replicas to the lowest-loaded cluster nodes.
