@@ -132,13 +132,9 @@ func getBL(loads map[BrokerID]float64) []brokerLoad {
 
 func getUnbalanceBL(brokers []brokerLoad) float64 {
 	var sumBrokerLoad float64
-	var maxBrokerLoad float64
 
 	for _, broker := range brokers {
 		sumBrokerLoad += broker.Load
-		if maxBrokerLoad < broker.Load {
-			maxBrokerLoad = broker.Load
-		}
 	}
 
 	avgBrokerLoad := sumBrokerLoad / float64(len(brokers))
@@ -146,11 +142,7 @@ func getUnbalanceBL(brokers []brokerLoad) float64 {
 	var brokerUnbalance float64
 	for _, broker := range brokers {
 		relBrokerLoad := broker.Load/avgBrokerLoad - 1.0
-		if relBrokerLoad > 0 {
-			brokerUnbalance += relBrokerLoad * relBrokerLoad
-		} else {
-			brokerUnbalance += relBrokerLoad * relBrokerLoad / 2
-		}
+		brokerUnbalance += relBrokerLoad * relBrokerLoad
 	}
 
 	return brokerUnbalance
